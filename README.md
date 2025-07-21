@@ -49,3 +49,84 @@ Asegúrate de tener instalados los siguientes componentes:
 
   ```bash
   nest new client-microservice
+
+  Navega al directorio del proyecto:
+
+Bash
+
+cd client-microservice
+Instalar Dependencias del Proyecto:
+
+Bash
+
+npm install @nestjs/microservices
+Configurar src/main.ts:
+Abre el archivo src/main.ts y reemplaza su contenido con la lógica del cliente:
+
+TypeScript
+
+// src/main.ts
+import { NestFactory } from '@nestjs/core';
+import { Transport, ClientProxyFactory } from '@nestjs/microservices';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  const timeMicroserviceClient = ClientProxyFactory.create({
+    transport: Transport.TCP,
+    options: {
+      host: 'localhost',
+      port: 3001,
+    },
+  });
+
+  await timeMicroserviceClient.connect();
+  console.log('Cliente conectado al microservicio de la Hora.');
+
+  try {
+    console.log('\n--- Solicitando la hora actual al microservicio ---');
+    const currentTime = await timeMicroserviceClient.send('get_time', {}).toPromise();
+    console.log(`Hora recibida del microservicio: ${currentTime}`);
+
+  } catch (error) {
+    console.error('Error al comunicarse con el microservicio de la Hora:', error.message);
+  } finally {
+    await timeMicroserviceClient.close();
+    await app.close();
+    console.log('\nCliente desconectado y aplicación de prueba cerrada.');
+  }
+}
+bootstrap();
+src/app.module.ts (Opcional, dejar por defecto):
+Puedes dejar src/app.module.ts como está por defecto (o eliminar AppController y AppService si quieres un módulo más limpio):
+
+TypeScript
+
+// src/app.module.ts
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+@Module({
+  imports: [],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+Iniciar el Microservicio Cliente
+Asegúrate de que el time-microservice esté corriendo en su propia terminal. Luego, en la terminal de tu proyecto client-microservice, ejecuta:
+
+Bash
+
+npm run start
+🧪 Cómo Probar el Funcionamiento
+Asegúrate de que el time-microservice esté corriendo en una terminal (con npm run start:dev).
+
+En otra terminal, navega al directorio client-microservice y ejecuta npm run start.
+
+Observa la salida en ambas terminales:
+
+En la terminal de client-microservice, deberías ver mensajes de conexión, la solicitud de la hora y la hora recibida.
+
+En la terminal de time-microservice, deberías ver un mensaje indicando que recibió el comando get_time.
